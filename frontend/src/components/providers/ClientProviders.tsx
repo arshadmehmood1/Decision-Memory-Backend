@@ -9,16 +9,15 @@ import dynamic from 'next/dynamic';
 const AuthSync = dynamic(() => import('@/components/auth-sync').then(mod => mod.AuthSync), { ssr: false });
 
 export function ClientProviders({ children }: { children: ReactNode }) {
-    // Highly defensive check for Render build environment
     const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-    // If we're in build time and key is missing, we might want to skip ClerkProvider 
-    // to avoid the useContext crash, but children might depend on it.
-    // However, for /_global-error prerendering, we want to be safe.
+    // Use a fallback key for build-time if missing to prevent Clerk from crashing,
+    // though real auth won't work until the real key is provided in production env.
+    const effectiveKey = clerkKey || 'pk_test_Y2xlcmsuY29tJA'; // Dummy key for build stability
 
     return (
-        <ClerkProvider publishableKey={clerkKey}>
-            <AuthSync />
+        <ClerkProvider publishableKey={effectiveKey}>
+            {clerkKey && <AuthSync />}
             <QueryProvider>
                 {children}
                 <Toaster position="top-right" richColors closeButton />

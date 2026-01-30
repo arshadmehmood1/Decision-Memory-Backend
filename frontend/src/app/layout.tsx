@@ -13,12 +13,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import type { Viewport } from 'next';
+
 export const metadata: Metadata = {
   title: "Decision Memory",
   description: "Strategic decision tracking for high-velocity teams",
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: 'black',
   width: 'device-width',
   initialScale: 1,
