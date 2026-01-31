@@ -10,7 +10,7 @@ const envSchema = z.object({
     OPENAI_API_KEY: z.string().optional(),
     PORT: z.string().default('3001'),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    FRONTEND_URL: z.string().default('http://localhost:3000'),
+    FRONTEND_URL: z.string().default('https://decision-memory-frontend.vercel.app'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -30,7 +30,7 @@ export const config = {
     openaiApiKey: process.env.OPENAI_API_KEY || '',
     port: parseInt(process.env.PORT || '3001', 10),
     nodeEnv: process.env.NODE_ENV || 'development',
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+    frontendUrl: (process.env.FRONTEND_URL || 'https://decision-memory-frontend.vercel.app').trim().replace(/\/+$/, ''),
 
     // Feature flags based on available keys
     isAuthEnabled: !!process.env.CLERK_SECRET_KEY,

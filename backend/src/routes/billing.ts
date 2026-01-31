@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from '../middleware/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { PLANS, PlanType, FeatureType } from '../config/plans.js';
 import { badRequest } from '../middleware/errorHandler.js';
+import { config } from '../config/env.js';
 import { mailService } from '../lib/mail.js';
 import { createNotification } from './notifications.js';
 
@@ -48,7 +49,7 @@ router.post('/checkout', async (req: AuthenticatedRequest, res: Response, next: 
 
             res.json({
                 success: true,
-                url: `${process.env.FRONTEND_URL}/dashboard?upgraded=true`
+                url: `${config.frontendUrl}/dashboard?upgraded=true`
             });
             return;
         }
