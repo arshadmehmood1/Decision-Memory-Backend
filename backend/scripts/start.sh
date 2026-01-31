@@ -3,10 +3,7 @@
 # Exit on error
 set -e
 
-# Run database migrations
-echo "Running database migrations..."
-npx prisma db push --accept-data-loss
-
 # Start the application
-echo "Starting application..."
+# Note: npm start now includes 'npx prisma db push'
+echo "Starting application with database synchronization..."
 npm run start
