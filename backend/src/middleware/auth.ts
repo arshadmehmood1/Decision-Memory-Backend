@@ -170,6 +170,14 @@ export async function authMiddleware(
         req.workspaceId = activeWorkspaceId;
         req.userRole = user.role as any;
 
+        // Asynchronously log session activity (ignore errors to not block request)
+        prisma.userActivity.create({
+            data: {
+                userId: user.id,
+                type: 'SESSION_START',
+            }
+        }).catch(() => { });
+
         next();
     } catch (error) {
         next(error);
