@@ -104,17 +104,17 @@ export async function authMiddleware(
         try {
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
+            const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
 
             const payload = JSON.parse(jsonPayload);
             clerkId = payload.sub;
-            email = payload.email || payload.primary_email; // Clerk usually puts email here
+            email = payload.email || payload.primary_email;
             name = payload.name || payload.full_name;
+
+            console.log(`[AUTH] Authenticating Clerk User: ${clerkId} (${email})`);
         } catch (e) {
-            console.error("Failed to decode token", e);
-            throw unauthorized('Invalid token format');
+            console.error("[AUTH ERROR] Failed to decode token or missing claims:", e);
+            throw unauthorized('Invalid token format or missing identity claims');
         }
 
         if (!clerkId) {
@@ -187,7 +187,7 @@ export async function authMiddleware(
 /**
  * Optional auth middleware - continues even if not authenticated
  */
-export function optionalAuth(
+export async function optionalAuth(
     req: AuthenticatedRequest,
     _res: Response,
     next: NextFunction
@@ -196,8 +196,20 @@ export function optionalAuth(
 
     if (authHeader?.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
-        req.userId = token;
-        req.workspaceId = req.headers['x-workspace-id'] as string;
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf8'));
+
+            // Look up internal id if possible (simplified for optional)
+            const user = await prisma.user.findUnique({ where: { clerkId: payload.sub } });
+            if (user) {
+                req.userId = user.id;
+                req.workspaceId = user.workspaceId;
+            }
+        } catch (e) {
+            // Silently fail for optional auth
+        }
     }
 
     next();
