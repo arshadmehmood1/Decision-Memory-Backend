@@ -9,10 +9,8 @@ import { apiLimiter } from './middleware/rateLimit.js';
 
 const app = express();
 
-// Security headers
-if (config.nodeEnv === 'production') {
-    app.use(helmet());
-}
+// Security headers - Enable globally
+app.use(helmet());
 
 // Handle Chrome DevTools internal request to avoid 404s
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (_req, res) => {
@@ -25,11 +23,16 @@ if (config.nodeEnv !== 'test') {
 }
 
 // CORS configuration
+const allowedHeaders = ['Content-Type', 'Authorization', 'x-workspace-id'];
+if (config.nodeEnv === 'development') {
+    allowedHeaders.push('x-mock-user-id', 'x-mock-workspace-id');
+}
+
 app.use(cors({
     origin: config.frontendUrl,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-mock-user-id', 'x-mock-workspace-id', 'x-workspace-id'],
+    allowedHeaders,
 }));
 
 // Body parsing

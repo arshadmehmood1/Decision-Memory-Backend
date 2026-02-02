@@ -1,7 +1,19 @@
 import { prisma } from '../lib/prisma.js';
+import { sendWeeklyDigests } from './email-service.js';
 
 export async function runWeeklyDigest() {
     console.log('📊 [Digest Service] Starting weekly digest run...');
+
+    // Use the email service for actual sending
+    const result = await sendWeeklyDigests();
+
+    console.log(`✅ [Digest Service] Digest run complete. Sent: ${result.sent}, Failed: ${result.failed}`);
+    return result;
+}
+
+// Legacy function kept for backwards compatibility
+export async function runWeeklyDigestLegacy() {
+    console.log('📊 [Digest Service] Starting weekly digest run (legacy)...');
 
     // 1. Get all users who have opted into the digest
     const users = await prisma.user.findMany({
@@ -44,9 +56,6 @@ export async function runWeeklyDigest() {
             console.log(`   - New Decisions logged: ${newDecisions}`);
             console.log(`   - Decisions seeking review: ${pendingReviews.length}`);
             pendingReviews.forEach(d => console.log(`     * ${d.title} (Target: ${d.timelineToValidate?.toLocaleDateString()})`));
-
-            // In a real system, we would call an EmailService here
-            // await EmailService.sendDigest(user.email, { newDecisions, pendingReviews });
         }
     }
 

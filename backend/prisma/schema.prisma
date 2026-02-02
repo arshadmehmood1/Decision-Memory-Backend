@@ -27,6 +27,7 @@ model User {
   emailDigest     Boolean     @default(true)
   reviewReminders Boolean     @default(true)
   marketingEmails Boolean     @default(false)
+  emailNotifications Boolean  @default(true)
   decisions      Decision[]  @relation("DecisionCreator")
   reviews        Review[]
   comments       Comment[]
@@ -195,6 +196,7 @@ model Insight {
   insightType      String    // RECURRING_FAILURE, ASSUMPTION_BLINDSPOT, CATEGORY_TREND, TEAM_DYNAMICS, CONFIDENCE_CALIBRATION
   title            String
   description      String
+  summary          String    @default("") // Brief one-line summary for digests
   relatedDecisions String    // JSON: string[] (Decision IDs)
   generatedAt      DateTime  @default(now())
   dismissed        Boolean   @default(false)

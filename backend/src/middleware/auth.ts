@@ -22,22 +22,31 @@ export async function authMiddleware(
 ) {
     try {
         // Development mode: allow mock auth header
-        if (!config.isAuthEnabled || (config.nodeEnv === 'development' && req.headers['x-mock-user-id'])) {
-            const mockUserId = req.headers['x-mock-user-id'] as string;
-            const mockWorkspaceId = req.headers['x-mock-workspace-id'] as string;
+        // STRICT SECURITY: Only allow this in actual development environment
+        if (config.nodeEnv === 'development') {
+            if (req.headers['x-mock-user-id']) {
+                const mockUserId = req.headers['x-mock-user-id'] as string;
+                const mockWorkspaceId = req.headers['x-mock-workspace-id'] as string;
 
-            if (mockUserId && mockWorkspaceId) {
-                req.userId = mockUserId;
-                req.workspaceId = mockWorkspaceId;
+                if (mockUserId && mockWorkspaceId) {
+                    console.warn(`[AUTH] ⚠️ Using Mock Auth Headers for user: ${mockUserId}`);
+                    req.userId = mockUserId;
+                    req.workspaceId = mockWorkspaceId;
+                    req.userRole = 'ADMIN';
+                    return next();
+                }
+
+                // Default mock user for development if header exists but is empty? 
+                // Mostly falls through, but let's be explicit about dev fallback
+                console.warn('[AUTH] ⚠️ Using Default Dev User (No Auth Token)');
+                req.userId = 'dev-user-1';
+                req.workspaceId = 'dev-workspace-1';
                 req.userRole = 'ADMIN';
                 return next();
             }
-
-            // Default mock user for development
-            req.userId = 'dev-user-1';
-            req.workspaceId = 'dev-workspace-1';
-            req.userRole = 'ADMIN';
-            return next();
+        } else if (req.headers['x-mock-user-id']) {
+            // Production attempt to use mock headers - Security Warning
+            console.warn(`[SECURITY] 🚨 Attempted mock auth usage in ${config.nodeEnv} from IP: ${req.ip}`);
         }
 
         // Production: Verify Clerk JWT

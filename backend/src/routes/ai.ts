@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { GenerateTagsSchema, FindSimilarSchema, BlindspotAnalysisSchema, CheckAssumptionSchema } from '../lib/validation.js';
+import { stemmer } from '../lib/stemmer.js';
 import { badRequest, notFound } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -55,6 +56,16 @@ const AVAILABILITY_BIAS_INDICATORS = [
     'latest hype', 'neighbor said', 'saw on twitter', 'saw on x'
 ];
 
+const AUTHORITY_BIAS_INDICATORS = [
+    'manager wants', 'ceo said', 'client requested', 'consultant advised', 'expert opinion',
+    'boss thinks', 'investors want', 'senior management', 'hippo', 'highest paid'
+];
+
+const FALSE_DILEMMA_INDICATORS = [
+    'only choice', 'only option', 'no other way', 'either this or', 'forced to',
+    'have to choose', 'between a rock', 'last resort'
+];
+
 // Weak words that indicate low quality assumptions
 const ABSTRACTION_TERMS = [
     'might', 'maybe', 'probably', 'possibly', 'believe', 'feel', 'guess',
@@ -97,10 +108,11 @@ function extractKeywords(text: string, category?: string): string[] {
         .slice(0, 10)
         .map(([word]) => word);
 
-    // Add category-relevant keywords if they appear in text
+    // Add category-relevant keywords if they appear in text (stemmed check)
     if (category && CATEGORY_KEYWORDS[category]) {
+        const stemmedText = words.map(stemmer).join(' ');
         const categoryTags = CATEGORY_KEYWORDS[category].filter(tag =>
-            text.toLowerCase().includes(tag)
+            stemmedText.includes(stemmer(tag))
         );
         keywords.push(...categoryTags);
     }
@@ -110,16 +122,25 @@ function extractKeywords(text: string, category?: string): string[] {
 }
 
 /**
- * Calculate text similarity score (Jaccard similarity on words)
+ * Calculate text similarity score (Weighted Jaccard with Stemming)
  */
 function calculateSimilarity(text1: string, text2: string): number {
-    const words1 = new Set(text1.toLowerCase().split(/\s+/).filter(w => w.length > 2));
-    const words2 = new Set(text2.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+    const processWords = (t: string) => {
+        return new Set(
+            t.toLowerCase()
+                .split(/\s+/)
+                .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+                .map(stemmer)
+        );
+    };
+
+    const words1 = processWords(text1);
+    const words2 = processWords(text2);
 
     const intersection = [...words1].filter(w => words2.has(w)).length;
     const union = new Set([...words1, ...words2]).size;
 
-    return union > 0 ? intersection / union : 0;
+    return union > 0 ? (intersection / union) : 0;
 }
 
 // ============================================
@@ -280,9 +301,9 @@ router.post('/risk', async (req: AuthenticatedRequest, res: Response, next: Next
         // Irreversible high-impact decisions should spike to near 100
         const reversibilityWeights: Record<string, number> = {
             EASY: 1.0,      // No multiplier
-            MODERATE: 1.2,  // 20% increase
-            HARD: 1.5,      // 50% increase
-            IRREVERSIBLE: 2.0 // 100% increase (double risk)
+            MODERATE: 1.3,  // 30% increase
+            HARD: 1.8,      // 80% increase
+            IRREVERSIBLE: 2.5 // 150% increase (Very punitive)
         };
         const reversibilityMult = reversibilityWeights[reversibility] || 1.2;
 
@@ -406,6 +427,22 @@ router.post('/blindspot', async (req: AuthenticatedRequest, res: Response, next:
         if (foundAvailability.length > 0) {
             blindspots.push(
                 `Availability Bias: You're referencing recent or trending events. These are often more "available" in memory but not necessarily representative of long-term patterns.`
+            );
+        }
+
+        // 8. Check for Authority Bias
+        const foundAuthority = AUTHORITY_BIAS_INDICATORS.filter(word => fullText.includes(word));
+        if (foundAuthority.length > 0) {
+            blindspots.push(
+                `Authority Bias: Referencing "${foundAuthority[0]}" suggests you might be deferring to hierarchy rather than data. Does the evidence support their claim?`
+            );
+        }
+
+        // 9. Check for False Dilemma
+        const foundDilemma = FALSE_DILEMMA_INDICATORS.filter(word => fullText.includes(word));
+        if (foundDilemma.length > 0) {
+            blindspots.push(
+                `False Dilemma: You used binary language ("${foundDilemma[0]}"). Rarely are there only two options. Try to generate a 3rd hybrid option.`
             );
         }
 
