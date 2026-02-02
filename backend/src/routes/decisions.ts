@@ -227,44 +227,69 @@ router.patch('/:id', async (req: AuthenticatedRequest, res: Response, next: Next
         const data = parsed.data;
 
         // Update decision
-        const updated = await prisma.decision.update({
-            where: { id: req.params.id as string },
-            data: {
-                ...(data.title && { title: data.title }),
-                ...(data.category && { category: data.category }),
-                ...(data.theDecision && { theDecision: data.theDecision }),
-                ...(data.context && { context: data.context }),
-                ...(data.alternativesConsidered && { alternativesConsidered: JSON.stringify(data.alternativesConsidered) }),
-                ...(data.successCriteria && { successCriteria: JSON.stringify(data.successCriteria) }),
-                ...(data.tags && { tags: JSON.stringify(data.tags) }),
-                ...(data.status && { status: data.status }),
-                ...(data.estimatedImpact !== undefined && { estimatedImpact: data.estimatedImpact }),
-                ...(data.reversibility !== undefined && { reversibility: data.reversibility }),
-                ...(data.confidenceLevel !== undefined && { confidenceLevel: data.confidenceLevel }),
-                ...(data.privacy !== undefined && { privacy: data.privacy }),
-            },
-            include: {
-                assumptions: true,
-                madeBy: { select: { id: true, name: true } },
-            },
-        });
+        const updated = await prisma.$transaction(async (tx) => {
+            // 1. Get current version count
+            const versionCount = await tx.decisionVersion.count({
+                where: { decisionId: req.params.id as string }
+            });
 
-        // Create version record (stringify changes for SQLite)
-        await prisma.decisionVersion.create({
-            data: {
-                decisionId: req.params.id as string,
-                versionNumber: 1,
-                changedBy: req.userId!,
-                changes: JSON.stringify({ before: existing, after: updated }),
-            },
+            // 2. Update core decision data
+            const decision = await tx.decision.update({
+                where: { id: req.params.id as string },
+                data: {
+                    ...(data.title && { title: data.title }),
+                    ...(data.category && { category: data.category }),
+                    ...(data.theDecision && { theDecision: data.theDecision }),
+                    ...(data.context && { context: data.context }),
+                    ...(data.alternativesConsidered && { alternativesConsidered: JSON.stringify(data.alternativesConsidered) }),
+                    ...(data.successCriteria && { successCriteria: JSON.stringify(data.successCriteria) }),
+                    ...(data.tags && { tags: JSON.stringify(data.tags) }),
+                    ...(data.status && { status: data.status }),
+                    ...(data.estimatedImpact !== undefined && { estimatedImpact: data.estimatedImpact }),
+                    ...(data.reversibility !== undefined && { reversibility: data.reversibility }),
+                    ...(data.confidenceLevel !== undefined && { confidenceLevel: data.confidenceLevel }),
+                    ...(data.privacy !== undefined && { privacy: data.privacy }),
+                },
+                include: {
+                    assumptions: true,
+                    madeBy: { select: { id: true, name: true } },
+                },
+            });
+
+            // 3. Update assumptions if provided (Replace Strategy)
+            if (data.assumptions) {
+                await tx.assumption.deleteMany({
+                    where: { decisionId: req.params.id as string }
+                });
+
+                await tx.assumption.createMany({
+                    data: data.assumptions.map(a => ({
+                        decisionId: req.params.id as string,
+                        text: a.text,
+                        confidenceAtCreation: a.confidence || 'CONFIDENT',
+                    }))
+                });
+            }
+
+            // 4. Create version record
+            await tx.decisionVersion.create({
+                data: {
+                    decisionId: req.params.id as string,
+                    versionNumber: versionCount + 1,
+                    changedBy: req.userId!,
+                    changes: JSON.stringify({ before: existing, after: decision }),
+                },
+            });
+
+            return decision;
         });
 
         // Parse updated decision for response
         const parsedUpdated = {
             ...updated,
-            alternativesConsidered: JSON.parse(updated.alternativesConsidered),
-            successCriteria: JSON.parse(updated.successCriteria),
-            tags: JSON.parse(updated.tags),
+            alternativesConsidered: updated.alternativesConsidered ? JSON.parse(updated.alternativesConsidered as string) : [],
+            successCriteria: updated.successCriteria ? JSON.parse(updated.successCriteria as string) : [],
+            tags: updated.tags ? JSON.parse(updated.tags as string) : [],
         };
 
         res.json({ success: true, data: parsedUpdated });
