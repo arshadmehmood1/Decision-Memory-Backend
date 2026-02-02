@@ -1,0 +1,99 @@
+backend on 
+https://github.com/arshadmehmood1/Decision-Memory-Backend
+
+
+Name		
+arshadmehmood1
+arshadmehmood1
+deploy: update root package.json to only point to backend
+712a850
+ · 
+1 hour ago
+backend
+prepare backend for to deploy on render
+1 hour ago
+design_temp
+feat: Neural System Audit V2 and Production Readiness
+4 hours ago
+.gitignore
+feat: Neural System Audit V2 and Production Readiness
+4 hours ago
+README.md
+docs: Update README with Vercel deployment instructions and robust co…
+4 hours ago
+design.docx
+feat: Neural System Audit V2 and Production Readiness
+4 hours ago
+design_requirements.md
+feat: Neural System Audit V2 and Production Readiness
+4 hours ago
+extract_docx.py
+feat: Neural System Audit V2 and Production Readiness
+4 hours ago
+extracted_design.txt
+feat: Neural System Audit V2 and Production Readiness
+4 hours ago
+package.json
+deploy: update root package.json to only point to backend
+1 hour ago
+plan.docx
+feat: Neural System Audit V2 and Production Readiness
+4 hours ago
+plan_extracted.txt
+feat: Neural System Audit V2 and Production Readiness
+4 hours ago
+render.yaml
+feat: add root render.yaml for blueprint deployment
+1 hour ago
+Repository files navigation
+README
+
+
+
+
+frontend on 
+https://github.com/arshadmehmood1/Decision-Memory-Frontend
+
+
+Go to file
+t
+Name		
+arshadmehmood1
+arshadmehmood1
+fix: settings tabs content and add version tag for verification
+6eca944
+ · 
+31 minutes ago
+public
+initial: restore frontend for standalone deployment
+53 minutes ago
+src
+fix: settings tabs content and add version tag for verification
+31 minutes ago
+.gitignore
+initial: restore frontend for standalone deployment
+53 minutes ago
+README.md
+initial: restore frontend for standalone deployment
+53 minutes ago
+eslint.config.mjs
+initial: restore frontend for standalone deployment
+53 minutes ago
+lint_output_2.txt
+initial: restore frontend for standalone deployment
+53 minutes ago
+next.config.ts
+initial: restore frontend for standalone deployment
+53 minutes ago
+package.json
+initial: restore frontend for standalone deployment
+53 minutes ago
+postcss.config.mjs
+initial: restore frontend for standalone deployment
+53 minutes ago
+tsconfig.json
+initial: restore frontend for standalone deployment
+53 minutes ago
+vitest.config.ts
+initial: restore frontend for standalone deployment
+53 minutes ago

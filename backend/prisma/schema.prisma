@@ -24,6 +24,9 @@ model User {
   workspace      Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   role           String      @default("MEMBER") // ADMIN, MEMBER, VIEWER
   hasOnboarded   Boolean     @default(false)
+  emailDigest     Boolean     @default(true)
+  reviewReminders Boolean     @default(true)
+  marketingEmails Boolean     @default(false)
   decisions      Decision[]  @relation("DecisionCreator")
   reviews        Review[]
   comments       Comment[]
@@ -278,3 +281,25 @@ model FeatureFlag {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// ============================================
+// APP UPDATES (Changelog / What's New)
+// ============================================
+
+model AppUpdate {
+  id          String    @id @default(uuid())
+  title       String
+  description String    // Markdown content
+  featureKey  String?   @unique // Link to frontend feature flag
+  version     String?   // e.g., "1.2.0"
+  type        String    @default("FEATURE") // FEATURE, BUGFIX, IMPROVEMENT, ANNOUNCEMENT
+  status      String    @default("DRAFT") // DRAFT, APPROVED, LIVE, ARCHIVED
+  approvedAt  DateTime?
+  approvedBy  String?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, publishedAt])
+}
+

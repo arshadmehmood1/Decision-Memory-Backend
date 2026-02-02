@@ -11,6 +11,7 @@ import notificationsRouter from './notifications.js';
 import publicRouter from './public.js';
 import adminRouter from './admin.js';
 import featuresRouter, { adminFeaturesRouter } from './features.js';
+import { publicUpdatesRouter, adminUpdatesRouter } from './updates.js';
 
 
 
@@ -19,6 +20,7 @@ export const routes = Router();
 // Public routes (no auth required)
 routes.use('/public', publicRouter);
 routes.use(featuresRouter);
+routes.use('/updates', publicUpdatesRouter);
 
 
 // All other routes require authentication
@@ -35,4 +37,7 @@ routes.use('/notifications', notificationsRouter);
 routes.use('/admin', adminRouter);
 // Mount admin features under /admin path
 routes.use('/admin', adminFeaturesRouter);
+// Mount admin updates under /admin path
+routes.use('/admin/updates', adminUpdatesRouter);
+
 

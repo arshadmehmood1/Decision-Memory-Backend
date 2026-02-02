@@ -159,6 +159,9 @@ export const UpdateUserSchema = z.object({
     name: z.string().min(1).max(100).optional(),
     timezone: z.string().max(50).optional(),
     profilePicture: z.string().url().optional().nullable(),
+    emailDigest: z.boolean().optional(),
+    reviewReminders: z.boolean().optional(),
+    marketingEmails: z.boolean().optional(),
 });
 
 // ============================================

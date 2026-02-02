@@ -3,6 +3,7 @@ import { AuthenticatedRequest, requireRole } from '../middleware/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { badRequest, notFound } from '../middleware/errorHandler.js';
 import { z } from 'zod';
+import { runWeeklyDigest } from '../services/digest-service.js';
 
 const router = Router();
 
@@ -393,6 +394,18 @@ router.post('/cms/rollback/:id', async (req: AuthenticatedRequest, res: Response
         });
 
         res.json({ success: true, data: version });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/admin/system/run-digest - Manually trigger weekly digest
+ */
+router.post('/system/run-digest', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        await runWeeklyDigest();
+        res.json({ success: true, message: 'Digest run initiated. Check server logs for results.' });
     } catch (error) {
         next(error);
     }
