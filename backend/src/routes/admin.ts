@@ -515,5 +515,47 @@ router.post('/system/toggle-maintenance', async (req: AuthenticatedRequest, res:
     }
 });
 
+/**
+ * POST /api/admin/system/seed-roadmap - Seed the roadmap features
+ */
+router.post('/system/seed-roadmap', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        // Simple seeding logic: Create the core features if they don't exist
+        const roadmapCount = await prisma.appUpdate.count();
+        if (roadmapCount > 0) {
+            return res.json({ success: true, message: 'Roadmap already initialized.' });
+        }
+
+        const features = [
+            { title: 'PDF Decision Reports', version: '1.6.0', status: 'LIVE' },
+            { title: 'Aggregate Success Dashboard', version: '2.3.0', status: 'LIVE' },
+            { title: 'Automated Weekly Digest', version: '1.2.0', status: 'LIVE' },
+            { title: 'AI Insights Dashboard', version: '2.0.0', status: 'LIVE' },
+            { title: 'Decision Templates', version: '1.1.0', status: 'LIVE' },
+            { title: 'Interactive Demo Decision', version: '1.1.0', status: 'LIVE' },
+            { title: 'Smart Email Notifications', version: '1.2.0', status: 'LIVE' },
+            { title: 'Recurring Failure Detection', version: '2.0.0', status: 'DRAFT' },
+            { title: 'Pre-Mortem Risk Score', version: '2.1.0', status: 'DRAFT' },
+            { title: 'Assumption Checker', version: '2.1.0', status: 'DRAFT' },
+        ];
+
+        for (const f of features) {
+            await prisma.appUpdate.create({
+                data: {
+                    title: f.title,
+                    description: `Neural update targeting Phase 4 intelligence metrics.`,
+                    version: f.version,
+                    status: f.status as any,
+                    publishedAt: f.status === 'LIVE' ? new Date() : null,
+                }
+            });
+        }
+
+        res.json({ success: true, message: 'Roadmap matrix seeded with core vectors.' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 export default router;
 
