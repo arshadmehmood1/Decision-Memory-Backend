@@ -1,6 +1,6 @@
 export const PLANS = {
     FREE: {
-        DECISIONS: 50,
+        DECISIONS: 10,
         MEMBERS: 1,
         AI_INSIGHTS: false, // Basic only
         EXPORT: 'PDF'
