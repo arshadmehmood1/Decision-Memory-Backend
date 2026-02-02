@@ -28,6 +28,19 @@ publicFeaturesRouter.get('/feature/:key', async (req, res, next) => {
 // Admin router for feature flag management (mounted under /admin)
 export const adminFeaturesRouter = Router();
 
+// GET /feature (will be mounted at /admin/feature)
+// Admin only - list all feature flags
+adminFeaturesRouter.get('/feature', async (req, res, next) => {
+    try {
+        const features = await prisma.featureFlag.findMany({
+            orderBy: { featureKey: 'asc' }
+        });
+        res.json({ success: true, data: features });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // PUT /feature/:key (will be mounted at /admin/feature/:key)
 // Admin only - auth is handled by admin router middleware
 adminFeaturesRouter.put('/feature/:key', async (req, res, next) => {
