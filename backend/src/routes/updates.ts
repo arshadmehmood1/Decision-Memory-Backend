@@ -4,6 +4,11 @@ import { prisma } from '../lib/prisma.js';
 import { badRequest, notFound } from '../middleware/errorHandler.js';
 import { z } from 'zod';
 
+// Helper to safely extract string from params/query
+const getString = (val: string | string[] | undefined): string | undefined => {
+    return typeof val === 'string' ? val : Array.isArray(val) ? val[0] : undefined;
+};
+
 // ============================================
 // PUBLIC UPDATES ROUTER
 // ============================================
@@ -83,7 +88,8 @@ adminUpdatesRouter.get('/', async (req: AuthenticatedRequest, res: Response, nex
  */
 adminUpdatesRouter.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
+        const id = getString(req.params.id);
+        if (!id) throw badRequest('Update ID required');
         const update = await prisma.appUpdate.findUnique({ where: { id } });
         if (!update) throw notFound('Update not found');
         res.json({ success: true, data: update });
@@ -134,7 +140,8 @@ const updateSchema = z.object({
 
 adminUpdatesRouter.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
+        const id = getString(req.params.id);
+        if (!id) throw badRequest('Update ID required');
         const parsed = updateSchema.safeParse(req.body);
         if (!parsed.success) {
             throw badRequest(parsed.error.errors.map(e => e.message).join(', '));
@@ -156,14 +163,15 @@ adminUpdatesRouter.put('/:id', async (req: AuthenticatedRequest, res: Response, 
  */
 adminUpdatesRouter.post('/:id/approve', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
+        const id = getString(req.params.id);
+        if (!id) throw badRequest('Update ID required');
 
         const existing = await prisma.appUpdate.findUnique({ where: { id } });
         if (!existing) throw notFound('Update not found');
         if (existing.status === 'LIVE') throw badRequest('Update is already live');
 
         const update = await prisma.appUpdate.update({
-            where: { id },
+            where: { id: existing.id },
             data: {
                 status: 'LIVE',
                 approvedAt: new Date(),
@@ -183,7 +191,8 @@ adminUpdatesRouter.post('/:id/approve', async (req: AuthenticatedRequest, res: R
  */
 adminUpdatesRouter.post('/:id/archive', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
+        const id = getString(req.params.id);
+        if (!id) throw badRequest('Update ID required');
 
         const update = await prisma.appUpdate.update({
             where: { id },
@@ -201,7 +210,8 @@ adminUpdatesRouter.post('/:id/archive', async (req: AuthenticatedRequest, res: R
  */
 adminUpdatesRouter.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
+        const id = getString(req.params.id);
+        if (!id) throw badRequest('Update ID required');
         await prisma.appUpdate.delete({ where: { id } });
         res.json({ success: true });
     } catch (error) {
